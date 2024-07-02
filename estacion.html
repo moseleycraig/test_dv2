@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cluster Tree</title>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+<body>
+    <h2>Cluster Tree Visualization</h2>
+    <div id="tree-container"></div>
+    <script>
+        // Sample Data
+        const data = [listado-estaciones-completo-act];
+
+        // Convert JSON data to hierarchical format
+        const root = d3.stratify()
+            .id(d => d.CODIGO)
+            .parentId(d => d.PARENT_ID)(data);
+
+        // Create the chart
+        const width = 960;
+        const dx = 10;
+        const dy = width / (root.height + 1);
+
+        const tree = d3.cluster().nodeSize([dx, dy]);
+
+        root.x0 = dy / 2;
+        root.y0 = 0;
+        tree(root);
+
+        const svg = d3.create("svg")
+            .attr("viewBox", [-dy / 2, -dx, width, dx])
+            .attr("font-family", "sans-serif")
+            .attr("font-size", 10);
+
+        const gLink = svg.append("g")
+            .attr("fill", "none")
+            .attr("stroke", "#555")
+            .attr("stroke-opacity", 0.4)
+            .attr("stroke-width", 1.5);
+
+        const gNode = svg.append("g")
+            .attr("stroke-linejoin", "round")
+            .attr("stroke-width", 3);
+
+        function update(source) {
+            const nodes = root.descendants().reverse();
+            const links = root.links();
+
+            tree(root);
+
+            let left = root;
+            let right = root;
+            root.eachBefore(node => {
+                if (node.x < left.x) left = node;
+                if (node.x > right.x) right = node;
+            });
+
+            const height = right.x - left.x + dx * 2;
+
+            const transition = svg.transition()
+                .duration(750)
+                .attr("viewBox", [-dy / 2, left.x - dx, width, height]);
+
+            const node = gNode.selectAll("g")
+                .data(nodes, d => d.id);
+
+            const nodeEnter = node.enter().append("g")
+                .attr("transform", d => `translate(${source.y0},${source.x0})`)
+                .attr("fill-opacity", 0)
+                .attr("stroke-opacity", 0)
+                .on("click", (event, d) => {
+                    d.children = d.children ? null : d._children;
+                    update(d);
+                });
+
+            nodeEnter.append("circle")
+                .attr("r", 2.5)
+                .attr("fill", d => d._children ? "#555" : "#999")
+                .attr("stroke-width", 10);
+
+            nodeEnter.append("text")
+                .attr("dy", "0.31em")
+                .attr("x", d => d._children ? -6 : 6)
+                .attr("text-anchor", d => d._children ? "end" : "start")
+                .text(d => d.data.DIRECION);
+
+            const nodeUpdate = node.merge(nodeEnter).transition(transition)
+                .attr("transform", d => `translate(${d.y},${d.x})`)
+                .attr("fill-opacity", 1)
+                .attr("stroke-opacity", 1);
+
+            const nodeExit = node.exit().transition(transition).remove()
+                .attr("transform", d => `translate(${source.y},${source.x})`)
+                .attr("fill-opacity", 0)
+                .attr("stroke-opacity", 0);
+
+            const link = gLink.selectAll("path")
+                .data(links, d => d.target.id);
+
+            const linkEnter = link.enter().append("path")
+                .attr("d", d => {
+                    const o = {x: source.x0, y: source.y0};
+                    return diagonal({source: o, target: o});
+                });
+
+            link.merge(linkEnter).transition(transition)
+                .attr("d", diagonal);
+
+            link.exit().transition(transition).remove()
+                .attr("d", d => {
+                    const o = {x: source.x, y: source.y};
+                    return diagonal({source: o, target: o});
+                });
+
+            root.eachBefore(d => {
+                d.x0 = d.x;
+                d.y0 = d.y;
+            });
+        }
+
+        const diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
+
+        update(root);
+
+        document.getElementById("tree-container").appendChild(svg.node());
+    </script>
+</body>
+</html>
