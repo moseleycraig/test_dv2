@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Double Bar Chart with D3.js</title>
-    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
     <style>
         .bar {
             fill-opacity: 0.6;
@@ -27,102 +27,105 @@
     <h2>Double Bar Chart with D3.js</h2>
     <div id="chart"></div>
     <script>
-        // Load data from CSV file
-        d3.csv('double_bar_chart_data.csv').then(data => {
-            data.forEach(d => {
-                d.value1 = +d.value1;
-                d.value2 = +d.value2;
-            });
+        // Sample data
+        const data = [
+            {category: 'A', value1: 30, value2: 20},
+            {category: 'B', value1: 80, value2: 50},
+            {category: 'C', value1: 45, value2: 70},
+            {category: 'D', value1: 60, value2: 30},
+            {category: 'E', value1: 20, value2: 90},
+            {category: 'F', value1: 90, value2: 40},
+            {category: 'G', value1: 55, value2: 60}
+        ];
 
-            const margin = {top: 40, right: 20, bottom: 50, left: 60};
-            const width = 800 - margin.left - margin.right;
-            const height = 500 - margin.top - margin.bottom;
+        const margin = {top: 40, right: 20, bottom: 50, left: 60};
+        const width = 800 - margin.left - margin.right;
+        const height = 500 - margin.top - margin.bottom;
 
-            const svg = d3.select("#chart").append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-              .append("g")
-                .attr("transform", `translate(${margin.left},${margin.top})`);
+        const svg = d3.select("#chart").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
 
-            const x0 = d3.scaleBand()
-                .domain(data.map(d => d.category))
-                .range([0, width])
-                .padding(0.2);
+        const x0 = d3.scaleBand()
+            .domain(data.map(d => d.category))
+            .range([0, width])
+            .padding(0.2);
 
-            const x1 = d3.scaleBand()
-                .domain(['value1', 'value2'])
-                .range([0, x0.bandwidth()])
-                .padding(0.1);
+        const x1 = d3.scaleBand()
+            .domain(['value1', 'value2'])
+            .range([0, x0.bandwidth()])
+            .padding(0.1);
 
-            const y = d3.scaleLinear()
-                .domain([0, d3.max(data, d => Math.max(d.value1, d.value2))])
-                .nice()
-                .range([height, 0]);
+        const y = d3.scaleLinear()
+            .domain([0, d3.max(data, d => Math.max(d.value1, d.value2))])
+            .nice()
+            .range([height, 0]);
 
-            const color = d3.scaleOrdinal()
-                .domain(['value1', 'value2'])
-                .range(['#1f77b4', '#ff7f0e']);
+        const color = d3.scaleOrdinal()
+            .domain(['value1', 'value2'])
+            .range(['#1f77b4', '#ff7f0e']);
 
-            svg.append("g")
-                .selectAll("g")
-                .data(data)
-                .enter().append("g")
-                .attr("transform", d => `translate(${x0(d.category)},0)`)
-                .selectAll("rect")
-                .data(d => ['value1', 'value2'].map(key => ({key: key, value: d[key]})))
-                .enter().append("rect")
-                .attr("x", d => x1(d.key))
-                .attr("y", d => y(d.value))
-                .attr("width", x1.bandwidth())
-                .attr("height", d => height - y(d.value))
-                .attr("class", "bar")
-                .attr("fill", d => color(d.key));
+        svg.append("g")
+            .selectAll("g")
+            .data(data)
+            .enter().append("g")
+            .attr("transform", d => `translate(${x0(d.category)},0)`)
+            .selectAll("rect")
+            .data(d => ['value1', 'value2'].map(key => ({key: key, value: d[key]})))
+            .enter().append("rect")
+            .attr("x", d => x1(d.key))
+            .attr("y", d => y(d.value))
+            .attr("width", x1.bandwidth())
+            .attr("height", d => height - y(d.value))
+            .attr("class", "bar")
+            .attr("fill", d => color(d.key));
 
-            svg.append("g")
-                .attr("class", "axis")
-                .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(x0))
-              .append("text")
-                .attr("x", width / 2)
-                .attr("y", 40)
-                .attr("fill", "#000")
-                .attr("class", "axis-label")
-                .attr("text-anchor", "middle")
-                .text("Category");
+        svg.append("g")
+            .attr("class", "axis")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x0))
+          .append("text")
+            .attr("x", width / 2)
+            .attr("y", 40)
+            .attr("fill", "#000")
+            .attr("class", "axis-label")
+            .attr("text-anchor", "middle")
+            .text("Category");
 
-            svg.append("g")
-                .attr("class", "axis")
-                .call(d3.axisLeft(y))
-              .append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("x", -height / 2)
-                .attr("y", -50)
-                .attr("fill", "#000")
-                .attr("class", "axis-label")
-                .attr("text-anchor", "middle")
-                .text("Value");
+        svg.append("g")
+            .attr("class", "axis")
+            .call(d3.axisLeft(y))
+          .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2)
+            .attr("y", -50)
+            .attr("fill", "#000")
+            .attr("class", "axis-label")
+            .attr("text-anchor", "middle")
+            .text("Value");
 
-            const legend = svg.append("g")
-                .attr("class", "legend")
-                .attr("transform", `translate(${width},0)`)
-              .selectAll("g")
-                .data(['value1', 'value2'])
-                .enter().append("g")
-                .attr("transform", (d, i) => `translate(0,${i * 20})`);
+        const legend = svg.append("g")
+            .attr("class", "legend")
+            .attr("transform", `translate(${width},0)`)
+          .selectAll("g")
+            .data(['value1', 'value2'])
+            .enter().append("g")
+            .attr("transform", (d, i) => `translate(0,${i * 20})`);
 
-            legend.append("rect")
-                .attr("x", -18)
-                .attr("width", 18)
-                .attr("height", 18)
-                .attr("fill", color);
+        legend.append("rect")
+            .attr("x", -18)
+            .attr("width", 18)
+            .attr("height", 18)
+            .attr("fill", color);
 
-            legend.append("text")
-                .attr("x", -24)
-                .attr("y", 9)
-                .attr("dy", "0.35em")
-                .attr("text-anchor", "end")
-                .text(d => d);
-        });
+        legend.append("text")
+            .attr("x", -24)
+            .attr("y", 9)
+            .attr("dy", "0.35em")
+            .attr("text-anchor", "end")
+            .text(d => d);
     </script>
 </body>
 </html>
